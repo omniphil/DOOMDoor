@@ -200,7 +200,12 @@ int main(int argc, char *argv[])
     trace_doom_close();
 
     cls();
-    door_write(CSI "1;31m  Thanks for playing DOOM.\r\n" CSI "0m");
+    door_write(CSI "1;31m\r\n  Thanks for playing DOOM.\r\n\r\n" CSI "0m");
+
+    /* The player has just been sent a GPL-2 program, so this is where they're told where its source is: on the way
+     * in it would flash past, because the game takes over the screen a moment later. */
+    door_write(CSI "0;37m  DOOM here is Crispy Doom, free software under the GNU GPL v2.\r\n");
+    door_write("  Source: " CSI "1;37m" "https://github.com/omniphil/DOOMDoor\r\n" CSI "0m");
     press_any_key();
 
     door_cleanup();
