@@ -1,0 +1,9 @@
+# Build output
+module/obj/
+module/doom.wasm
+door/*.o
+door/doomdoor
+
+# Things that belong to players or to id Software, not in the repository
+door/saves/
+*.wad
