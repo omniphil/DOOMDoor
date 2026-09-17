@@ -160,7 +160,13 @@ int main(int argc, char *argv[])
     title();
     door_write(CSI "1;32m  ");
     write_terminator();
-    door_write(CSI "1;32m found. Sending the game...\r\n\r\n" CSI "0m");
+    door_write(CSI "1;32m found. Sending the game...\r\n" CSI "0m");
+
+    /* Whose saved games these are. "player" means the BBS didn't tell us who is calling (no drop file), and everyone
+     * would then share one set of saves, so it's worth the sysop seeing it. */
+    door_write(CSI "0;37m  Saved games for: ");
+    door_write(saves_player());
+    door_write("\r\n\r\n" CSI "0m");
 
     /* The WAD is 4 MB and only travels once: after that it's cached on the player's machine for good. */
     door_write(CSI "0;37m  Checking whether you already have the game data...\r\n" CSI "0m");

@@ -11,6 +11,9 @@
 /* Picks the folder for this player (their handle and BBS user number, from the drop file) and makes sure it exists. */
 void saves_init(const char *player, int user_number);
 
+/* The folder name this player's saves are kept under, for the door to show them. */
+const char *saves_player(void);
+
 /* Tells the game which slots exist, sending only each save's description. */
 void saves_send_list(void (*send)(const char *head, const void *payload, size_t len));
 

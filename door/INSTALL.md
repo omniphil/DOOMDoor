@@ -56,6 +56,16 @@ if their handles reduce to the same thing. A player's games therefore follow the
 Nothing else travels while they play: at the start the door sends only each save's 24-character description, which is
 what Doom's Load menu shows, and a save itself is only sent if they actually open it.
 
+### Checking it's really per player
+
+The door prints **"Saved games for: &lt;name&gt;"** as the game starts. On a real call that should be the caller's handle
+followed by their BBS user number, e.g. `phil-1`.
+
+If it says **`player`**, the door didn't find a `door32.sys` drop file, so it doesn't know who is calling — and every
+caller would then share one set of saves. That's expected when you run `./doomdoor` yourself over SSH, but on a real
+call it means the Mystic door entry isn't giving the door its drop file. Copy the settings from a door that already
+works (Fractals uses the same drop file and the same code), or pass the drop-file folder as the door's argument.
+
 ## What a player sees
 
 - **First call:** the WAD goes up once, with a progress bar (4.2 MB, about half a minute on a typical link). Then DOOM

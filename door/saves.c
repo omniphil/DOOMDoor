@@ -28,6 +28,7 @@
 /* Room for the door's own folder plus "/saves/<player>"; PATH_MAX all round makes the compiler fret about it. */
 #define DIR_MAX 512
 static char g_dir[DIR_MAX];
+static char g_player[80];
 
 /* An incoming save, while the game sends it up */
 static unsigned char *g_incoming;
@@ -78,11 +79,19 @@ void saves_init(const char *player, int user_number)
     else
         snprintf(name, sizeof(name), "%s", handle);
 
+    snprintf(g_player, sizeof(g_player), "%s", name);
+
     door_dir(base, sizeof(base));
     snprintf(g_dir, sizeof(g_dir), "%s/saves", base);
     mkdir(g_dir, 0755);
     snprintf(g_dir, sizeof(g_dir), "%s/saves/%s", base, name);
     mkdir(g_dir, 0755);
+}
+
+/* Which player's saves these are, for the door to show. */
+const char *saves_player(void)
+{
+    return g_player;
 }
 
 static void slot_path(int slot, char *out, size_t size)
