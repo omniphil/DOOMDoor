@@ -80,6 +80,6 @@ works (Fractals uses the same drop file and the same code), or pass the drop-fil
   the "this door needs TERMinator" screen.
 - **Shareware DOOM only.** `doom1.wad` is the episode id Software gave away and allowed to be passed on unchanged.
   Never put a commercial IWAD here: those may not be distributed, and the door would be handing out copies.
-- **Licensing: see `LICENSE.md`.** The game is GPL-2 (Crispy Doom), so the source has to be available to players;
-  `COPYING-crispy-doom.md` and `AUTHORS-crispy-doom.txt` travel with the door.
+- **Licensing: see `LICENSE.md`.** The game is GPL-2 (Crispy Doom), and its source is published at
+  https://github.com/omniphil/DOOMDoor; `COPYING-crispy-doom.md` and `AUTHORS-crispy-doom.txt` travel with the door.
 - Single player for now.

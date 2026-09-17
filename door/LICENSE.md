@@ -11,13 +11,11 @@ emulation inside it (Nuked OPL3) is LGPL, which is compatible.
 That is free to use, change and pass on. The one obligation is **source**: because the door sends the compiled game to
 every player, that counts as distributing it, so the matching source has to be available to them.
 
-What satisfies it:
+**The source is published at https://github.com/omniphil/DOOMDoor** — the module, this door, and the unmodified
+Crispy Doom 7.1 it is built from. Keep that repository up to date with the `doom.wasm` the door is actually handing
+out; a player is entitled to the source of the game they were sent, not an older one.
 
-1. The module's own source is `../module/` (the platform layer) plus the unmodified Crispy Doom 7.1 in
-   `../third_party/`, and `../module/README.md` says exactly which files change what.
-2. **Publish that source somewhere players can get it** — the same GitHub account as TERMinator is the obvious home —
-   and keep the version that's published matching the `doom.wasm` the door is handing out.
-3. Keep this file, Crispy's `COPYING.md` and its `AUTHORS` with the door, so the licence travels with the game.
+Also keep this file, Crispy's `COPYING.md` and its `AUTHORS` beside the door, so the licence travels with the game.
 
 TERMinator is GPL-2 as well, so nothing here conflicts with it. The engine and its sandbox stay separate programs that
 happen to run the module, which is exactly how a door's own code is meant to reach a player.

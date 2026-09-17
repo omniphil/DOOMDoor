@@ -4,7 +4,8 @@ DOOM, playable from a BBS: the door sends the game to the caller's terminal and 
 a second with sound, instead of streaming pictures down the line. This is the source for both halves.
 
 **This repository exists so that anyone who plays the door can have the source of the game they were sent**, which is
-what the GNU GPL asks for. See [Licensing](#licensing).
+what the GNU GPL asks for. See [Licensing](#licensing). It lives at https://github.com/omniphil/DOOMDoor, which is the
+address the door itself gives out.
 
 ## What's here
 
