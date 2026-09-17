@@ -166,7 +166,10 @@ int main(int argc, char *argv[])
      * would then share one set of saves, so it's worth the sysop seeing it. */
     door_write(CSI "0;37m  Saved games for: ");
     door_write(saves_player());
-    door_write("\r\n\r\n" CSI "0m");
+    door_write("\r\n");
+
+    /* DOOM here is Crispy Doom, which is GPL-2: players are entitled to the source of what they were just sent */
+    door_write("  Crispy Doom, GPL-2: https://github.com/omniphil/DOOMDoor\r\n\r\n" CSI "0m");
 
     /* The WAD is 4 MB and only travels once: after that it's cached on the player's machine for good. */
     door_write(CSI "0;37m  Checking whether you already have the game data...\r\n" CSI "0m");
