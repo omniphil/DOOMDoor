@@ -13,6 +13,7 @@ what the GNU GPL asks for. See [Licensing](#licensing).
 | `module/` | The game as TERMinator runs it: Crispy Doom compiled to WebAssembly, with the platform layer that replaces SDL. Built to `doom.wasm`. |
 | `door/` | The BBS door, which sends the game and the WAD, starts it, keeps each player's savegames, and waits for them to quit. |
 | `third_party/crispy-doom-7.1/` | Crispy Doom 7.1, unmodified, exactly as the module is built against. |
+| `module/trace/trace_api.h` | The engine API the module is written against, copied from TERMinator so this source builds on its own. |
 
 `module/README.md` has a file-by-file account of what was replaced and why, including the three things WebAssembly
 made awkward (indirect calls, no file system, no console).

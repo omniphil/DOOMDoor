@@ -7,7 +7,9 @@ WASI_SDK ?= $(HOME)/tools/wasi-sdk-34.0-x86_64-linux
 CC = $(WASI_SDK)/bin/clang
 
 CRISPY = ../third_party/crispy-doom-7.1
-TRACE_INCLUDE = ../../../TERMinator-Windows/trace/include
+# trace_api.h: the client's own tree when building here, or the copy bundled with the published source, so the
+# released source builds on its own without a checkout of TERMinator beside it.
+TRACE_INCLUDE = $(firstword $(wildcard ../../../TERMinator-Windows/trace/include) trace)
 
 CFLAGS = --target=wasm32-wasip1-threads -O2 -pthread -std=gnu11 \
          -Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function \
