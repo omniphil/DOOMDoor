@@ -94,6 +94,12 @@ const char *saves_player(void)
     return g_player;
 }
 
+/* The player's own folder, for anything else the door keeps per player (their display choice). */
+const char *saves_folder(void)
+{
+    return g_dir;
+}
+
 static void slot_path(int slot, char *out, size_t size)
 {
     snprintf(out, size, "%s/doomsav%d.dsg", g_dir, slot);

@@ -20,6 +20,12 @@ Also keep this file, Crispy's `COPYING.md` and its `AUTHORS` beside the door, so
 TERMinator is GPL-2 as well, so nothing here conflicts with it. The engine and its sandbox stay separate programs that
 happen to run the module, which is exactly how a door's own code is meant to reach a player.
 
+## `doomdoor` itself: also GNU GPL version 2 (since 2026-09-19)
+
+For callers without TRACE the door runs DOOM itself (ANSI mode), so the same Crispy Doom code is compiled into the
+door binary, and its sources travel in `native/`. That makes the door a GPL-2 program too; the source obligation is
+the same one as above, met by the same repository, which should carry the door's `ansi_*.c` files as well.
+
 ## `doom1.wad` — the game data: id Software's shareware terms
 
 The shareware episode ("Knee-Deep in the Dead") was given away by id and may be passed on **unchanged and not for

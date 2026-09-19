@@ -14,6 +14,9 @@ void saves_init(const char *player, int user_number);
 /* The folder name this player's saves are kept under, for the door to show them. */
 const char *saves_player(void);
 
+/* The player's own folder (made by saves_init), for anything else kept per player. */
+const char *saves_folder(void);
+
 /* Tells the game which slots exist, sending only each save's description. */
 void saves_send_list(void (*send)(const char *head, const void *payload, size_t len));
 

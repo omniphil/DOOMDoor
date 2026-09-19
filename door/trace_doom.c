@@ -87,6 +87,16 @@ size_t trace_doom_wad_size(void)
     return wad_blob.size;
 }
 
+const unsigned char *trace_doom_wad_data(void)
+{
+    return wad_blob.data;
+}
+
+const char *trace_doom_wad_hash(void)
+{
+    return wad_blob.hash;
+}
+
 /* ---- talking to TERMinator ---- */
 
 bool trace_doom_detect(void)
@@ -157,7 +167,8 @@ static size_t decode_base64(const char *text, unsigned char *out, size_t max)
  *   get slot=<n>                          send this player's save back
  *   put slot=<n> off=<o> total=<t>\n...   a piece of a save to keep for them
  */
-static void handle_module_message(const unsigned char *data, size_t len)
+void trace_doom_module_message(const unsigned char *data, size_t len,
+                               void (*reply)(const char *head, const void *payload, size_t len))
 {
     char head[128];
     const unsigned char *payload = NULL;
@@ -182,7 +193,7 @@ static void handle_module_message(const unsigned char *data, size_t len)
     if (strstr(head, "total=")) sscanf(strstr(head, "total="), "total=%ld", &total);
 
     if (!strncmp(head, "get", 3))
-        saves_send_slot(slot, trace_doom_send);
+        saves_send_slot(slot, reply);
     else if (!strncmp(head, "put", 3) && payload != NULL)
         saves_receive_chunk(slot, (size_t)off, (size_t)total, payload, payload_len);
 }
@@ -227,7 +238,7 @@ static int wait_reply(int timeout_ms)
                     size_t got = decode_base64(b64 + strlen("TERMinator:TRACE;Data;module=doom;b64="),
                                                message, sizeof(message));
                     if (got > 0)
-                        handle_module_message(message, got);
+                        trace_doom_module_message(message, got, trace_doom_send);
                     continue;
                 }
             }

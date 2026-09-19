@@ -27,6 +27,15 @@ void trace_doom_wait(void);
 /* Sends a message to the game: a line of text, and optionally a payload after it. */
 void trace_doom_send(const char *head, const void *payload, size_t len);
 
+/* Handles a message the game sent the door (a savegame request or piece). The ANSI mode, which runs the game
+ * here on the BBS, calls this directly instead of it arriving over TRACE; reply is how a save goes back. */
+void trace_doom_module_message(const unsigned char *data, size_t len,
+                               void (*reply)(const char *head, const void *payload, size_t len));
+
+/* The WAD's bytes and SHA-256, for the ANSI mode to play from. */
+const unsigned char *trace_doom_wad_data(void);
+const char *trace_doom_wad_hash(void);
+
 /* Stops the game if it's still running. */
 void trace_doom_close(void);
 

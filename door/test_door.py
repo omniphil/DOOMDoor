@@ -6,7 +6,7 @@ It runs the door on a pseudo-terminal, answers its TRACE commands the way TERMin
 door uploads really is doom.wasm and doom1.wad, byte for byte. Run it after changing anything in the door:
 
     python3 test_door.py            # a terminal with TRACE: the full exchange
-    python3 test_door.py --plain    # a terminal without it: the door should bow out politely
+    python3 test_door.py --plain    # a terminal without it: TRACE is marked NOT FOUND on the menu
 """
 
 import base64
@@ -47,6 +47,7 @@ def fields(text):
 class FakeTerminal:
     def __init__(self, plain=False):
         self.plain = plain
+        self.left_menu = False
         self.uploads = {}       # name -> bytes being collected ('module' or an asset hash)
         self.stored = {}        # what finished uploading, by hash
         self.started = None     # the WAD hash the module was told to play
@@ -189,7 +190,14 @@ def run(plain=False, timeout=120):
                     break
                 terminal.feed(primary, data.decode('latin-1'))
             break
-        # The door stops at "press any key"; anything counts, so give it one when it goes quiet
+        # A terminal without TRACE is offered the ANSI versions; this test only checks it's told about TRACE, so it
+        # leaves from the menu rather than start a game
+        if plain and 'Q = back' in terminal.screen and not terminal.left_menu:
+            os.write(primary, b'q')
+            terminal.left_menu = True
+            last_output = time.time()
+        # The door stops at "press any key" and at its menu (Enter takes the recommended choice, TRACE here); anything
+        # counts, so give it Enter when it goes quiet
         if door.poll() is None and time.time() - last_output > 1.0:
             os.write(primary, b'\r')
             last_output = time.time()
@@ -212,7 +220,7 @@ def main():
 
     if plain:
         assert 'needs TERMinator' in screen, 'a terminal without TRACE should be told so'
-        print('PASS: a terminal without TRACE gets the fallback screen')
+        print('PASS: a terminal without TRACE is told TRACE needs TERMinator, and offered the ANSI versions')
         return
 
     wasm = sha256_file(os.path.join(HERE, 'doom.wasm'))

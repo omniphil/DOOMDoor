@@ -12,7 +12,7 @@ address the door itself gives out.
 | Folder | What it is |
 |---|---|
 | `module/` | The game as TERMinator runs it: Crispy Doom compiled to WebAssembly, with the platform layer that replaces SDL. Built to `doom.wasm`. |
-| `door/` | The BBS door, which sends the game and the WAD, starts it, keeps each player's savegames, and waits for them to quit. |
+| `door/` | The BBS door, which sends the game and the WAD, starts it, keeps each player's savegames, and waits for them to quit. For terminals without TRACE it also runs the game itself and sends it as ANSI (see below). |
 | `third_party/crispy-doom-7.1/` | Crispy Doom 7.1, unmodified, exactly as the module is built against. |
 | `module/trace/trace_api.h` | The engine API the module is written against, copied from TERMinator so this source builds on its own. |
 
@@ -28,7 +28,8 @@ cd module
 make            # -> doom.wasm
 ```
 
-The door is ordinary C for the BBS machine:
+The door is ordinary C for the BBS machine. It also compiles the game itself from `module/` and `third_party/`, for
+its ANSI mode:
 
 ```
 cd door
@@ -36,6 +37,15 @@ make            # -> doomdoor
 ```
 
 Put `doom.wasm` and a shareware `doom1.wad` beside `doomdoor`; `door/INSTALL.md` covers the rest.
+
+## ANSI mode: for terminals without TRACE
+
+A caller whose terminal can't run the game gets it anyway: the door runs the very same module code natively on the
+BBS (`door/ansi_host.c` answers its `trace_*` calls the way TERMinator would) and sends each frame as ANSI, in
+24-bit colour, xterm's 256 colours, or the 16 colours and CP437 blocks every BBS terminal has. The player picks on
+the start page, which marks what their terminal was detected as supporting. The status bar, messages and menus are
+drawn as text, since Doom's own are pictures of text that can't be read at 80x24. No sound. Details in
+`door/INSTALL.md`.
 
 ## Which binary this is the source of
 
@@ -61,6 +71,7 @@ repository. It may be passed on unchanged and not for profit, which is what the 
   which descends from id Software's release of the Doom source. The OPL chip emulation inside it is LGPL, which is
   compatible. Anything built from this is GPL-2 as well.
 - **`door/`**: written for this project and covered by the same terms, so the whole thing can be passed on together.
+  Since the ANSI mode, the door binary has Crispy Doom compiled into it, so it is itself a GPL-2 build of this source.
 - **TERMinator itself is a separate program** (also GPL-2, https://github.com/omniphil/TERMinator-Windows). It runs
   the module in a sandbox; the game is not built into it, which is the point: a door brings its own game.
 
