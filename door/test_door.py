@@ -7,6 +7,7 @@ door uploads really is doom.wasm and doom1.wad, byte for byte. Run it after chan
 
     python3 test_door.py            # a terminal with TRACE: the full exchange
     python3 test_door.py --plain    # a terminal without it: TRACE is marked NOT FOUND on the menu
+    python3 test_door.py --bin      # a TERMinator with binary frames (bin=1): uploads and messages without base64
 """
 
 import base64
@@ -29,6 +30,31 @@ INFO = 'TERMinator:TRACE;Info;v=1;wasm=1;audio=1;assets=1;send=1;store=1;tick=1'
 # The size of savegame piece the real module sends (module/src/saves.c CHUNK, door/saves.h SAVES_CHUNK).
 # They have to agree: a piece bigger than the door can decode is dropped, which corrupts the save.
 SAVE_CHUNK = 3000
+
+
+BINARY = '--bin' in sys.argv
+if BINARY:
+    INFO += ';bin=1'
+
+
+def unescape(data):
+    """A binary frame's bytes back: '=' then the byte + 64 stands for one byte (trace_door.c)."""
+    out, it = bytearray(), iter(data)
+    for b in it:
+        out.append((next(it, 64) - 64) & 0xFF if b == 0x3D else b)
+    return bytes(out)
+
+
+def bin_frame(header, payload=b''):
+    """A binary frame the way TERMinator writes one to the door: every control byte escaped (the door reads through
+    a pseudo-terminal, as here, which would act on Ctrl-C or turn CR into LF), and '=', DEL and 0xFF."""
+    out = bytearray(b'\x1b_TERMinator:TRACE;Bin;')
+    for b in header.encode() + b'\n' + payload:
+        if b < 0x20 or b in (0x3D, 0x7F, 0xFF):
+            out += bytes((0x3D, (b + 64) & 0xFF))
+        else:
+            out.append(b)
+    return bytes(out) + b'\x1b\\'
 
 
 def sha256_file(path):
@@ -55,11 +81,12 @@ class FakeTerminal:
         self.screen = ''
         self.listed = {}        # saves the door says this player has
         self.fetched = {}       # a save the door sent back
+        self.binary_frames = 0  # how many binary frames the door sent
 
     def reply(self, fd, text):
         os.write(fd, (APC + text + ST).encode())
 
-    def handle(self, fd, command):
+    def handle(self, fd, command, raw=None):
         verb = command.split(';')[0]
         args = fields(command)
 
@@ -82,7 +109,7 @@ class FakeTerminal:
                 self.reply(fd, f'TERMinator:TRACE;Need;module=doom;wasm={key}')
         elif verb == 'Put':
             key = args.get('asset') or 'module:' + next(k[7:] for k in self.uploads if k.startswith('module:'))
-            chunk = base64.b64decode(args['data'])
+            chunk = raw if raw is not None else base64.b64decode(args['data'])
             assert int(args['offset']) == len(self.uploads[key]), 'chunks arrived out of order'
             self.uploads[key] += chunk
         elif verb == 'PutDone':
@@ -103,9 +130,9 @@ class FakeTerminal:
                 time.sleep(0.2)
                 self.play(fd)
                 self.reply(fd, 'TERMinator:TRACE;Closed;module=doom;code=0')
-            elif 'b64' in args:
+            elif 'b64' in args or raw is not None:
                 # Something the door sent the game: the list of saves it holds for this player
-                message = base64.b64decode(args['b64'])
+                message = raw if raw is not None else base64.b64decode(args['b64'])
                 head = message.split(b'\n', 1)[0].decode('latin-1')
                 body = message.split(b'\n', 1)[1] if b'\n' in message else b''
                 if head.startswith('list'):
@@ -119,7 +146,10 @@ class FakeTerminal:
     def module_says(self, fd, head, payload=b''):
         """Pretends to be the game talking to the door, which TERMinator relays as base64."""
         message = head.encode() + (b'\n' + payload if payload else b'')
-        self.reply(fd, 'TERMinator:TRACE;Data;module=doom;b64=' + base64.b64encode(message).decode())
+        if BINARY:
+            os.write(fd, bin_frame('Data;module=doom', message))
+        else:
+            self.reply(fd, 'TERMinator:TRACE;Data;module=doom;b64=' + base64.b64encode(message).decode())
 
     def play(self, fd):
         """The player saves a game and loads it back, which is all the door has to handle while they play."""
@@ -156,7 +186,12 @@ class FakeTerminal:
             self.screen += self.buffer[:start]
             command = self.buffer[start + 2:end]
             self.buffer = self.buffer[end + 2:]
-            if command.startswith('TERMinator:TRACE;'):
+            if command.startswith('TERMinator:TRACE;Bin;'):
+                # A header line, then the raw payload (a Put chunk, or a message for the game)
+                self.binary_frames += 1
+                header, _, raw = unescape(command[len('TERMinator:TRACE;Bin;'):].encode('latin-1')).partition(b'\n')
+                self.handle(fd, header.decode('ascii'), raw)
+            elif command.startswith('TERMinator:TRACE;'):
                 self.handle(fd, command[len('TERMinator:TRACE;'):])
 
 
@@ -245,6 +280,10 @@ def main():
     assert not os.path.exists(os.path.join(HERE, 'saves', 'player', 'doomsav5.dsg')), \
         'a savegame that lost a piece on the way was kept anyway'
     print('PASS: a savegame with a missing piece was refused instead of kept')
+
+    if BINARY:
+        assert terminal.binary_frames > 0, 'bin=1 was offered but the door never sent a binary frame'
+        print(f'PASS: binary frames used ({terminal.binary_frames}): uploads and messages without base64')
 
 
 if __name__ == '__main__':

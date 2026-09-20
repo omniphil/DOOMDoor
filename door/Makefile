@@ -11,7 +11,7 @@ MODULE = $(firstword $(wildcard ../module native/module))
 CRISPY = $(firstword $(wildcard ../third_party/crispy-doom-7.1 native/crispy))
 TRACE_INCLUDE = $(firstword $(wildcard ../../../TERMinator-Windows/trace/include native/trace ../module/trace))
 
-DOOR_OBJ = main.o door.o trace_doom.o saves.o sha256.o ansi_host.o ansi_screen.o ansi_input.o ansi_play.o
+DOOR_OBJ = main.o door.o trace_doom.o trace_door.o saves.o sha256.o ansi_host.o ansi_screen.o ansi_input.o ansi_play.o
 
 # ---- the game, compiled for this machine ----
 # The same files and flags ../module/Makefile builds into doom.wasm, only for a normal CPU rather than wasm32.

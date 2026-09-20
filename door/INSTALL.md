@@ -113,3 +113,19 @@ The start page lets each caller pick, and marks what their terminal was detected
 - **Licensing: see `LICENSE.md`.** The game is GPL-2 (Crispy Doom), and its source is published at
   https://github.com/omniphil/DOOMDoor; `COPYING-crispy-doom.md` and `AUTHORS-crispy-doom.txt` travel with the door.
 - Single player for now.
+
+## Parked idea: smoother held keys in ANSI (not applied, 2026-09-19)
+
+A terminal sends one press, pauses for the keyboard's repeat delay (~500 ms), then repeats. `ansi_input.c` lets go
+before the repeats arrive, so a held key is briefly released:
+
+| Held 1.2 s, 500 ms repeat delay | down | let go | down again |
+|---|---|---|---|
+| forward | 0 ms | 300 ms | 500 ms |
+| turn | 0 ms | 160 ms | 500 ms |
+
+In play it barely shows: Doom's momentum carries movement through the gap, and its slow start on turns hides most of
+the turning pause. The Wolfenstein 3D door fixed the same thing (`../../Wolf3D/door/ansi_input.c`, "How held keys
+work" in its INSTALL.md). If it's ever wanted here, the recommended port is **the turn part only** (pulse turns
+through the repeat delay), which leaves taps, movement and always-run (`joyb_speed 29`) exactly as they are. Don't
+port Wolfenstein's one-shot-per-press fire: Doom fires continuously while fire is held.
