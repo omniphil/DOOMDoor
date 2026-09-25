@@ -133,7 +133,7 @@ says "no sound". CTerm 1.332+ scales the pictures itself; older ones are sent th
   played, or earlier while the link has room to spare, and kept in the caller's cache. About 6 KB/s while a track is
   new to them.
 - **Keys**: DOOM's own keys, with real presses and releases where the terminal reports them (`CSI = 1 h`); otherwise the
-  ANSI mode's keys. Ctrl-Q goes straight back to the BBS. Always-run is on.
+  ANSI mode's keys. Ctrl-Q goes straight back to the BBS. Walking with Shift to run, as in TRACE, where the terminal reports keys; always-run where it can't.
 - **Debugging**: `DOOMDOOR_LOG=/some/file` also gets frames a second, KB/s, quality and round trip every 5 seconds.
 - **Trying a slower link**: a file `saves/<player>/linktest.cfg` with `kbps=500` and `ping=80` (any numbers) makes
   that player's games go through a modelled link of that speed (KB/s) and round trip (ms), keys included. Nobody

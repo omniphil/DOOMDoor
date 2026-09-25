@@ -63,13 +63,17 @@ static const char DEFAULT_CFG[] =
     "joyb_speed 29\n";
 
 /* The JPEG XL graphics mode shows Doom's own picture at its own size, so its status bar and messages stay in it.
- * Always run as in ANSI mode: not every terminal reports Shift being held (and where one does, Shift walks). */
+ * Walking with Shift to run, as in TRACE and the original, when the terminal reports keys being held; always running,
+ * as in ANSI mode, when it can't say Shift is down. */
 static const char PIXEL_CFG[] =
+    "screenblocks 10\n"
+    "show_messages 1\n";
+static const char PIXEL_AUTORUN_CFG[] =
     "screenblocks 10\n"
     "show_messages 1\n"
     "joyb_speed 29\n";
 
-static bool g_pixel_mode;
+static bool g_pixel_mode, g_pixel_autorun;
 
 static const char CRISPY_CFG[] =
     "crispy_hires 0\n"
@@ -195,9 +199,10 @@ static void native_reply(const char *head, const void *payload, size_t len)
     free(message);
 }
 
-void ansi_host_set_pixel_mode(bool on)
+void ansi_host_set_pixel_mode(bool on, bool autorun)
 {
     g_pixel_mode = on;
+    g_pixel_autorun = autorun;
 }
 
 bool ansi_host_start(const unsigned char *wad, size_t wad_size, const char *wad_hash)
@@ -214,7 +219,9 @@ bool ansi_host_start(const unsigned char *wad, size_t wad_size, const char *wad_
     snprintf(g_wad_hash, sizeof(g_wad_hash), "%s", wad_hash);
 
     ansi_game_prepare();
-    if (g_pixel_mode)
+    if (g_pixel_mode && g_pixel_autorun)
+        tracedoom_ramfs_put("default.cfg", PIXEL_AUTORUN_CFG, sizeof(PIXEL_AUTORUN_CFG) - 1, 0);
+    else if (g_pixel_mode)
         tracedoom_ramfs_put("default.cfg", PIXEL_CFG, sizeof(PIXEL_CFG) - 1, 0);
     else
         tracedoom_ramfs_put("default.cfg", DEFAULT_CFG, sizeof(DEFAULT_CFG) - 1, 0);

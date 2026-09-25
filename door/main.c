@@ -464,9 +464,9 @@ static int play_jxl(const terminal_t *term)
     }
     if (caps.keys)
     {
-        door_write("  The keys are DOOM's own: arrows move, Ctrl fires, Space opens doors,\r\n");
-        door_write("  Alt with the arrows steps sideways, 1-7 pick a weapon, Tab shows the map\r\n");
-        door_write("  and Esc brings up the menu. Quit from the menu, or press Ctrl-Q, to\r\n");
+        door_write("  The keys are DOOM's own: arrows move, Shift runs, Ctrl fires, Space opens\r\n");
+        door_write("  doors, Alt with the arrows steps sideways, 1-7 pick a weapon, Tab shows the\r\n");
+        door_write("  map and Esc brings up the menu. Quit from the menu, or press Ctrl-Q, to\r\n");
         door_write("  come back.\r\n\r\n");
     }
     else

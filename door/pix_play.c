@@ -660,7 +660,7 @@ play_result_t pix_play(const pix_caps_t *caps)
     write_all(out.data, out.len);
 
     pix_hooks_enable(caps->sound);
-    ansi_host_set_pixel_mode(true);
+    ansi_host_set_pixel_mode(true, !caps->keys);
     if (!ansi_host_start(trace_doom_wad_data(), trace_doom_wad_size(), trace_doom_wad_hash()))
     {
         door_write("\033[=2l\033[=1l\033[0m\033[?25h");

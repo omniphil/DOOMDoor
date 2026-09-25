@@ -10,8 +10,9 @@
 #include <stdint.h>
 
 /* Before starting: Doom's settings for the JPEG XL graphics mode (its own status bar and messages) instead of the
- * ANSI ones (the whole picture as view, messages to the door's text line). */
-void ansi_host_set_pixel_mode(bool on);
+ * ANSI ones (the whole picture as view, messages to the door's text line). autorun: always run, for a terminal that
+ * can't report Shift being held. */
+void ansi_host_set_pixel_mode(bool on, bool autorun);
 
 /* Starts Doom on its own thread, playing the WAD the door loaded, with this player's savegames. */
 bool ansi_host_start(const unsigned char *wad, size_t wad_size, const char *wad_hash);
