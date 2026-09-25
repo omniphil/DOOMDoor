@@ -78,9 +78,10 @@ The start page lets each caller pick, and marks what their terminal was detected
 | Choice | What it is | Bandwidth while moving (measured locally) |
 |---|---|---|
 | 1. TRACE graphics (640x400 + Sound) | the game runs on their own machine, as before. Only offered to TERMinator with TRACE | almost none |
-| 2. ANSI 24-bit | half-blocks in exact colour: the best-looking ANSI | ~700 KB/s |
-| 3. ANSI 256 | the same half-blocks in xterm's 256 colours | ~350 KB/s |
-| 4. ANSI 16 | CP437 blocks and shades, fitted per cell. Works in any BBS terminal | ~75 KB/s |
+| 2. JPEG XL graphics (320x200 + Sound) | DOOM's real picture and sound, run here (see below) | 115-700 KB/s, set by the link |
+| 3. ANSI 24-bit (best ANSI look) | half-blocks in exact colour: the best-looking ANSI | ~700 KB/s |
+| 4. ANSI 256 | the same half-blocks in xterm's 256 colours | ~350 KB/s |
+| 5. ANSI 16 | CP437 blocks and shades, fitted per cell. Works in any BBS terminal | ~75 KB/s |
 
 - **24-bit and 256** are marked DETECTED when the terminal answers `ESC [ c` as SyncTERM's CTerm 1.300 or newer
   (TERMinator, SyncTERM 1.2+); otherwise UNKNOWN. Test strips on the menu let the player see which modes work.
@@ -96,6 +97,49 @@ The start page lets each caller pick, and marks what their terminal was detected
   their last repeat (`ansi_input.c`: the hold times are there to tune).
 - **Saves** work the same as TRACE's: same folder, same files, whichever way the player plays.
 - **Debugging:** `DOOMDOOR_LOG=/some/file ./doomdoor` writes DOOM's own startup messages there.
+
+## JPEG XL mode: DOOM's real picture and sound, run here (added 2026-09-25)
+
+For terminals that speak the CTerm APC picture and sound commands but not TRACE. DOOM runs here as in ANSI mode, but
+the caller sees its real 320x200 picture, scaled up by their terminal, with DOOM's own status bar, menus and messages,
+and hears its sound effects and music. Sources: `pix_play.c` (pictures, pacing, keys), `pix_sound.c` (sound),
+`pix_hooks.c` (catches DOOM's sound calls), `jxl_enc.c`, `apc.c`.
+
+**What the BBS box needs:** libjxl's shared library, which the door loads when it starts (`libjxl.so.0.11` on Ubuntu
+25.10, already there as a dependency of other packages). Nothing else to install: libjxl's headers are in
+`jxl_include/`. If the library is ever missing, the door still runs and the menu shows this mode as NOT FOUND.
+
+**When it's offered:** the terminal must answer `ESC [ c` as CTerm, then say it draws JPEG XL (`Q;JXL`). Sound is used
+when it also plays sound files, Ogg Vorbis and 8-bit WAV (`Q;libsndfile`, `Q;libsndfileFormat`); otherwise the menu
+says "no sound". CTerm 1.332+ scales the pictures itself; older ones are sent them pre-scaled, at about twice the bytes.
+
+**How it keeps up** (measured with a simulated terminal, `DOOMDOOR_LOG` numbers):
+
+| Link | Frames a second while moving | Quality it settles at |
+|---|---|---|
+| 2 MB/s, 20 ms ping | 35 (DOOM's own rate) | JPEG XL distance 1, visually lossless |
+| 500 KB/s, 120 ms ping | 34-35 | distance ~2.5 |
+| 300 KB/s, 200 ms ping | 33-35 | distance ~5 |
+| 150 KB/s, 60 ms ping | 30-35 | distance 8, soft but playable |
+
+- **Only what changed is sent**: the picture is cut into 32x8 tiles; standing still costs 1-3 KB/s.
+- **Pacing**: a cursor-position request follows each frame and its answer says it arrived. As many frames are allowed
+  on their way as the link's speed times its round trip, so a long ping doesn't cap the frame rate.
+- **Quality follows the link**: sharper while every frame goes and no queue builds, softer as soon as one does; a
+  still picture is sent once more, sharp, when it settles.
+- **Sound**: the 55 effects go up once per caller (about 710 KB, a few seconds, with a progress bar; checked by md5 on
+  later calls) and are played by commands of a few dozen bytes. Music is in `music/`: every track rendered ahead of
+  time on DOOM's OPL chip and cut into 5-second Ogg Vorbis pieces (8.3 MB in all), each sent only when it's about to be
+  played, or earlier while the link has room to spare, and kept in the caller's cache. About 6 KB/s while a track is
+  new to them.
+- **Keys**: DOOM's own keys, with real presses and releases where the terminal reports them (`CSI = 1 h`); otherwise the
+  ANSI mode's keys. Ctrl-Q goes straight back to the BBS. Always-run is on.
+- **Debugging**: `DOOMDOOR_LOG=/some/file` also gets frames a second, KB/s, quality and round trip every 5 seconds.
+- **Trying a slower link**: a file `saves/<player>/linktest.cfg` with `kbps=500` and `ping=80` (any numbers) makes
+  that player's games go through a modelled link of that speed (KB/s) and round trip (ms), keys included. Nobody
+  else is affected; delete the file to go back. Their `saves/<player>/jxl.log` shows how the door coped.
+- **Re-making the music** (development machine, only if the WAD changes): `make musrender`, then
+  `./musrender /tmp/tracks && python3 tools/make_music.py /tmp/tracks music` (needs ffmpeg with libvorbis).
 
 ## What a player sees
 

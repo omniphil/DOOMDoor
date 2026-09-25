@@ -12,7 +12,7 @@ address the door itself gives out.
 | Folder | What it is |
 |---|---|
 | `module/` | The game as TERMinator runs it: Crispy Doom compiled to WebAssembly, with the platform layer that replaces SDL. Built to `doom.wasm`. |
-| `door/` | The BBS door, which sends the game and the WAD, starts it, keeps each player's savegames, and waits for them to quit. For terminals without TRACE it also runs the game itself and sends it as ANSI (see below). |
+| `door/` | The BBS door, which sends the game and the WAD, starts it, keeps each player's savegames, and waits for them to quit. For terminals without TRACE it also runs the game itself and sends it as JPEG XL pictures with sound, or as ANSI (see below). |
 | `third_party/crispy-doom-7.1/` | Crispy Doom 7.1, unmodified, exactly as the module is built against. |
 | `module/trace/trace_api.h` | The engine API the module is written against, copied from TERMinator so this source builds on its own. |
 
@@ -47,6 +47,23 @@ the start page, which marks what their terminal was detected as supporting. The 
 drawn as text, since Doom's own are pictures of text that can't be read at 80x24. No sound. Details in
 `door/INSTALL.md`.
 
+## JPEG XL mode: DOOM's real picture and sound, run on the BBS
+
+For terminals that speak the CTerm APC picture and sound commands but not TRACE. The door runs the game natively, as
+in ANSI mode, but sends its real 320x200 picture as JPEG XL (the terminal scales it up), with DOOM's own status bar,
+menus and messages, and plays its sound on the caller's terminal from files kept in the terminal's cache:
+
+- **Pictures** (`door/pix_play.c`): only the 32x8 tiles that changed are sent; as many frames may be on their way at
+  once as the link's speed times its round trip allows; JPEG XL's quality follows the link to hold up to 30 frames a
+  second, and tiles that settle are sent again sharp. libjxl is loaded at run time (`door/jxl_enc.c`, with its
+  headers in `door/jxl_include/`).
+- **Sound** (`door/pix_sound.c`, `door/pix_hooks.c`): the WAD's sound effects are uploaded once and then triggered by
+  commands of a few dozen bytes. Music is the WAD's tracks pre-rendered on DOOM's own OPL chip and cut into 5-second
+  Ogg Vorbis pieces, each uploaded just before it is needed. The pieces are made from id Software's music, so like
+  the WAD they are not in this repository: `door/tools/musrender.c` and `door/tools/make_music.py` make them from
+  `doom1.wad` (`door/INSTALL.md`). Without them the mode plays with sound effects only.
+- **Keys**: real presses and releases where the terminal reports them, otherwise the ANSI mode's key handling.
+
 ## Which binary this is the source of
 
 The build published with the door at the time of writing:
@@ -72,6 +89,7 @@ repository. It may be passed on unchanged and not for profit, which is what the 
   compatible. Anything built from this is GPL-2 as well.
 - **`door/`**: written for this project and covered by the same terms, so the whole thing can be passed on together.
   Since the ANSI mode, the door binary has Crispy Doom compiled into it, so it is itself a GPL-2 build of this source.
+- **`door/jxl_include/`**: the public headers of libjxl 0.11.1, BSD 3-clause (`LICENSE-libjxl`, `PATENTS-libjxl`).
 - **TERMinator itself is a separate program** (also GPL-2, https://github.com/omniphil/TERMinator-Windows). It runs
   the module in a sandbox; the game is not built into it, which is the point: a door brings its own game.
 

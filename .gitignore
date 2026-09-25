@@ -3,9 +3,12 @@ module/obj/
 module/doom.wasm
 door/*.o
 door/doomdoor
+door/musrender
+door/tools/*.o
 
 # Things that belong to players or to id Software, not in the repository
 door/saves/
 *.wad
 door/game/
 door/native/
+door/music/

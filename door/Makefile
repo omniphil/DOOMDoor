@@ -1,9 +1,17 @@
 # The DOOM door. For TERMinator it sends doom.wasm and doom1.wad, which run on the player's own machine (see
-# ../module). For every other terminal it runs the same game itself and sends it as ANSI (ansi_*.c), so the game's
-# sources are built in here too. Built for the BBS box; the same C builds anywhere POSIX.
+# ../module). For every other terminal it runs the same game itself and sends it as JPEG XL pictures with sound
+# (pix_*.c) or as ANSI (ansi_*.c), so the game's sources are built in here too. Built for the BBS box; the same C
+# builds anywhere POSIX. libjxl is loaded at run time (jxl_enc.c), so only its headers are needed, and they're here.
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -O2
-LDFLAGS = -pthread -lm
+LDFLAGS = -pthread -lm -ldl
+
+# Doom's sound calls go through pix_hooks.c first, for the JPEG XL mode (which plays sound on the caller's terminal),
+# and so does its end-of-frame call, so IDRATE can show the frames that reached the caller
+WRAP = I_StartSound I_UpdateSoundParams I_StopSound I_SoundIsPlaying \
+       I_RegisterSong I_UnRegisterSong I_PlaySong I_StopSong I_PauseSong I_ResumeSong I_SetMusicVolume \
+       I_FinishUpdate
+WRAP_FLAGS = $(foreach f, $(WRAP), -Wl,--wrap=$(f))
 
 # The game's sources: the development tree when there is one (so edits there are always what gets built), otherwise
 # the copy `make bundle` puts in native/ for the BBS
@@ -11,7 +19,8 @@ MODULE = $(firstword $(wildcard ../module native/module))
 CRISPY = $(firstword $(wildcard ../third_party/crispy-doom-7.1 native/crispy))
 TRACE_INCLUDE = $(firstword $(wildcard ../../../TERMinator-Windows/trace/include native/trace ../module/trace))
 
-DOOR_OBJ = main.o door.o trace_doom.o trace_door.o saves.o sha256.o ansi_host.o ansi_screen.o ansi_input.o ansi_play.o
+DOOR_OBJ = main.o door.o trace_doom.o trace_door.o saves.o sha256.o ansi_host.o ansi_screen.o ansi_input.o ansi_play.o \
+           apc.o jxl_enc.o pix_play.o pix_sound.o
 
 # ---- the game, compiled for this machine ----
 # The same files and flags ../module/Makefile builds into doom.wasm, only for a normal CPU rather than wasm32.
@@ -34,14 +43,14 @@ GAME_SRC = $(addprefix $(CRISPY)/src/, $(COMMON)) \
            $(addprefix $(MODULE)/src/crispy_overrides/, $(OVERRIDDEN)) \
            $(CRISPY)/opl/opl.c $(CRISPY)/opl/opl3.c $(CRISPY)/opl/opl_queue.c \
            $(wildcard $(MODULE)/src/*.c) \
-           ansi_hud.c ansi_compat.c
+           ansi_hud.c ansi_compat.c pix_hooks.c
 
 # In a folder of their own, so the module's saves.c can't be confused with the door's
 GAME_OBJ = $(patsubst %.c, game/%.o, $(notdir $(GAME_SRC)))
 vpath %.c $(MODULE)/src $(MODULE)/src/crispy_overrides $(CRISPY)/src $(CRISPY)/src/doom $(CRISPY)/opl
 
 doomdoor: $(DOOR_OBJ) $(GAME_OBJ)
-	$(CC) $(DOOR_OBJ) $(GAME_OBJ) -o $@ $(LDFLAGS)
+	$(CC) $(DOOR_OBJ) $(GAME_OBJ) -o $@ $(LDFLAGS) $(WRAP_FLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -49,6 +58,14 @@ doomdoor: $(DOOR_OBJ) $(GAME_OBJ)
 # trace_api.h marks its functions for WebAssembly, which gcc doesn't know and would warn about
 ansi_host.o: ansi_host.c
 	$(CC) $(CFLAGS) -Wno-attributes -I $(TRACE_INCLUDE) -c $< -o $@
+
+jxl_enc.o: jxl_enc.c
+	$(CC) $(CFLAGS) -I jxl_include -c $< -o $@
+
+# Renders the WAD's music for the JPEG XL mode (tools/musrender.c, then tools/make_music.py). Development only: the
+# results are in music/, so the BBS never builds this.
+musrender: tools/musrender.o saves.o sha256.o ansi_host.o trace_doom.o trace_door.o door.o $(GAME_OBJ)
+	$(CC) $^ -o $@ $(LDFLAGS) $(WRAP_FLAGS) -Wl,--wrap=trace_present,--wrap=trace_audio_room,--wrap=trace_audio_write
 
 # The module's two overridden files share names with Crispy's, so they are built from their own folder
 game/p_mobj.o: $(MODULE)/src/crispy_overrides/p_mobj.c | game
@@ -96,6 +113,6 @@ bundle:
 	@du -sh native
 
 clean:
-	rm -rf $(DOOR_OBJ) game doomdoor
+	rm -rf $(DOOR_OBJ) game doomdoor musrender tools/*.o
 
 .PHONY: clean install bundle
