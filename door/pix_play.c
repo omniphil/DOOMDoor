@@ -200,6 +200,24 @@ static const pix_caps_t *g_caps;
 static bool g_held[128];
 static bool g_quit_asked;
 
+/* Fire is Ctrl, and F or J fire too, as they do in the ANSI mode: a phone's soft keyboard and a terminal's button
+ * bar have no Ctrl to hold. The letter still goes to Doom as well, so typing a savegame name or a cheat works. */
+#define SC_CTRL 0x1D
+#define SC_F    0x21
+#define SC_J    0x24
+static bool g_fire_down;        /* Ctrl as Doom has it */
+
+static void sync_fire(void)
+{
+    bool want = g_held[SC_CTRL] || g_held[SC_F] || g_held[SC_J];
+
+    if (want != g_fire_down)
+    {
+        g_fire_down = want;
+        ansi_host_key(SC_CTRL, want);
+    }
+}
+
 /* A Linux key code (what CSI = 1 h reports) as the set-1 scancode Doom's input takes */
 static int evdev_to_set1(int code)
 {
@@ -232,9 +250,12 @@ static void key_report(const char *params, bool down)
         if (sc > 0 && sc < 128 && g_held[sc] != down)
         {
             g_held[sc] = down;
-            ansi_host_key(sc, down);
+            if (sc != SC_CTRL)
+                ansi_host_key(sc, down);
+            if (sc == SC_CTRL || sc == SC_F || sc == SC_J)
+                sync_fire();
         }
-        if (down && sc == KEY_QUIT_SC && g_held[0x1D])
+        if (down && sc == KEY_QUIT_SC && g_held[SC_CTRL])
             g_quit_asked = true;
         p = strchr(p, ';');
         if (p == NULL)
@@ -249,8 +270,10 @@ static void release_all(void)
         if (g_held[sc])
         {
             g_held[sc] = false;
-            ansi_host_key(sc, false);
+            if (sc != SC_CTRL)
+                ansi_host_key(sc, false);
         }
+    sync_fire();
     ansi_input_release_all();
 }
 
