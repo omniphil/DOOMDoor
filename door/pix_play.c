@@ -27,6 +27,7 @@
 
 #include <errno.h>
 #include <math.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -629,6 +630,35 @@ static void shape_in_release(long now)
     }
 }
 
+/* ---- if the door itself falls over ----
+ *
+ * The caller's terminal is left in this mode's state otherwise: key reports on and typed keys held back (so the BBS
+ * seems not to answer the keyboard at all), and seconds of sound still queued (2026-09-27). So on a crash the terminal
+ * is put back first -- one prepared string, all a signal handler may safely do -- and then the crash goes on as it
+ * would have.
+ */
+
+#define STOP_SOUND(ch) APC_PREFIX "A;Flush;C=" #ch APC_END
+static const char CRASH_RESET[] = "\033[=2l\033[=1l"
+    STOP_SOUND(2) STOP_SOUND(3) STOP_SOUND(4) STOP_SOUND(5) STOP_SOUND(6) STOP_SOUND(7) STOP_SOUND(8)
+    STOP_SOUND(9) STOP_SOUND(10) STOP_SOUND(11) STOP_SOUND(12) STOP_SOUND(13) STOP_SOUND(14)
+    "\033[0m\033[2J\033[H\033[?25h";
+static const int CRASH_SIGNALS[] = { SIGSEGV, SIGBUS, SIGFPE, SIGILL, SIGABRT };
+
+static void crash_reset(int sig)
+{
+    ssize_t n = write(STDOUT_FILENO, CRASH_RESET, sizeof(CRASH_RESET) - 1);
+    (void)n;
+    signal(sig, SIG_DFL);
+    raise(sig);
+}
+
+static void crash_guard(bool on)
+{
+    for (size_t i = 0; i < sizeof(CRASH_SIGNALS) / sizeof(CRASH_SIGNALS[0]); i++)
+        signal(CRASH_SIGNALS[i], on ? crash_reset : SIG_DFL);
+}
+
 /* ---- the game ---- */
 
 play_result_t pix_play(const pix_caps_t *caps)
@@ -682,11 +712,13 @@ play_result_t pix_play(const pix_caps_t *caps)
         pix_sound_start(&out);
     write_all(out.data, out.len);
 
+    crash_guard(true);
     pix_hooks_enable(caps->sound);
     ansi_host_set_pixel_mode(true, !caps->keys);
     if (!ansi_host_start(trace_doom_wad_data(), trace_doom_wad_size(), trace_doom_wad_hash()))
     {
         door_write("\033[=2l\033[=1l\033[0m\033[?25h");
+        crash_guard(false);
         free(out.data);
         return PLAY_FAILED;
     }
@@ -889,6 +921,7 @@ play_result_t pix_play(const pix_caps_t *caps)
         out_str(&out, "\033[=2l\033[=1l");
     out_str(&out, "\033[0m\033[2J\033[H\033[?25h");
     write_all(out.data, out.len);
+    crash_guard(false);
     free(out.data);
     free(frame);
     if (log != NULL)
