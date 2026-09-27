@@ -129,7 +129,7 @@ says "no sound". CTerm 1.332+ scales the pictures itself; older ones are sent th
   still picture is sent once more, sharp, when it settles.
 - **Sound**: the 55 effects go up once per caller (about 710 KB, a few seconds, with a progress bar; checked by md5 on
   later calls) and are played by commands of a few dozen bytes. Music is in `music/`: every track rendered ahead of
-  time on DOOM's OPL chip and cut into 5-second Ogg Vorbis pieces (8.3 MB in all), each sent only when it's about to be
+  time on DOOM's OPL chip and cut into 5-second Ogg Vorbis pieces at quality 4 (14 MB in all), each sent only when it's about to be
   played, or earlier while the link has room to spare, and kept in the caller's cache. About 6 KB/s while a track is
   new to them.
 - **Keys**: DOOM's own keys, with real presses and releases where the terminal reports them (`CSI = 1 h`); otherwise the

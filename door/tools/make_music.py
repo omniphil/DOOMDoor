@@ -2,7 +2,8 @@
 """
 make_music.py -- turns musrender's WAV files into the pieces the JPEG XL graphics mode plays (door/music/).
 
-Each track becomes 5-second Ogg Vorbis files, mono at 22050 Hz (about 4.4 KB a second). The door uploads a piece to
+Each track becomes 5-second Ogg Vorbis files, mono at 22050 Hz, quality 4 (about 5.5 KB a second; quality 0, used
+until 2026-09-27, measured 17-21 dB signal to noise on the OPL music and was audibly gritty, 4 is 23-29). The door uploads a piece to
 the caller's cache only when it's about to be played, so a track starts within a moment and a slow connection is
 never tied up sending a whole one; the caller's terminal plays the pieces back to back on one channel, seamlessly
 (Vorbis keeps each piece's exact length).
@@ -20,6 +21,7 @@ import sys
 
 RATE = 22050
 PIECE = 5 * RATE          # samples a piece
+QUALITY = '4'
 
 
 def main():
@@ -41,7 +43,10 @@ def main():
         for k in range(pieces):
             chunk = pcm[k * PIECE * 2:(k + 1) * PIECE * 2]
             subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-f', 's16le', '-ar', str(RATE), '-ac', '1',
-                            '-i', '-', '-c:a', 'libvorbis', '-q:a', '0',
+                            '-i', '-', '-c:a', 'libvorbis', '-q:a', QUALITY,
+                            # bitexact: the same stream serial every time, so re-running this doesn't change a piece
+                            # whose sound hasn't (its md5 is how the door knows a caller already has it)
+                            '-fflags', '+bitexact', '-flags:a', '+bitexact',
                             os.path.join(dst, f'{track}_{k:02d}.ogg')], input=chunk, check=True)
         last_ms = (samples - (pieces - 1) * PIECE) * 1000 // RATE
         index.append(f'{track} {lump_hash} {pieces} {last_ms}\n')
