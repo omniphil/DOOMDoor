@@ -59,7 +59,7 @@ what Doom's Load menu shows, and a save itself is only sent if they actually ope
 ### Checking it's really per player
 
 The door prints **"Saved games for: &lt;name&gt;"** as the game starts. On a real call that should be the caller's handle
-followed by their BBS user number, e.g. `phil-1`.
+followed by their BBS user number, e.g. `user-1`.
 
 If it says **`player`**, the door didn't find a `door32.sys` drop file, so it doesn't know who is calling — and every
 caller would then share one set of saves. That's expected when you run `./doomdoor` yourself over SSH, but on a real

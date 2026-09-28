@@ -56,7 +56,7 @@ static void door_dir(char *out, size_t size)
  * A folder name for this player: their handle, plus the BBS's own user number.
  *
  * The handle alone isn't enough to tell two people apart, because cutting it down to plain characters can make two
- * different handles the same ("Phil" and "P.h.i.l" both become "phil"), and they would then share savegames. The user
+ * different handles the same ("User" and "U.s.e.r" both become "user"), and they would then share savegames. The user
  * number is unique on the board, so the two together can't collide. Cutting the handle down also means it can only
  * ever name a folder inside saves/, never anywhere else.
  */
